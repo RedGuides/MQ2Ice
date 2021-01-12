@@ -308,7 +308,8 @@ void DoIce()
 
 
 	// Check to see if we are on ice ....
-	if (pSpawn->AccelerationFriction < 0.5) {
+	// ICE : AccelerationFriction = 0.02  AreaFriction = 0.99
+	if (pSpawn->AccelerationFriction <= 0.02 && pSpawn->mPlayerPhysicsClient.Levitate != 2) {
 		// Calculate the Velocity Vectors
 		double A = pSpawn->Heading * EQ2RAD;
 		VF = pSpawn->SpeedX * sin(A) + pSpawn->SpeedY * cos(A);
