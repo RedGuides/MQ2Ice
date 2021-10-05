@@ -19,18 +19,16 @@
 //          2020-03-08 - Added buff option to toggle blocking bard selos.
 //          2020-03-09 - Added user defined area.
 
-#include "../MQ2Plugin.h"
-
+#include <mq/Plugin.h>
 
 PreSetup("MQ2Ice");
-
-#define TIME unsigned long long
+PLUGIN_VERSION(2020.0309);
 
 // ***************************************************************************
 // Global Variables
 // ***************************************************************************
 
-TIME tick = 0;
+uint64_t tick = 0;
 
 int PluginON = 1;           // Should we do anything?
 int PluginWALK = 1;         // Should we toggle run/walk?
@@ -70,7 +68,7 @@ void ClearAreaList()
 	while (pAreaList)
 	{
 		p = pAreaList;
-		pAreaList = (AREANODE *)pAreaList->pNext;
+		pAreaList = (AREANODE*)pAreaList->pNext;
 		free(p);
 	}
 }
@@ -107,7 +105,7 @@ void LoadAreaList()
 // To Evaluate or Not to Evaluate that is the question... I choose to EVAL for easy development
 // ***************************************************************************
 
-float Evaluate(char *zOutput, char *zFormat, ...) {
+float Evaluate(char* zOutput, char* zFormat, ...) {
 	va_list vaList;
 	va_start(vaList, zFormat);
 	char szTemp[MAX_STRING];
@@ -122,14 +120,14 @@ float Evaluate(char *zOutput, char *zFormat, ...) {
 		gszLastNormalError[0] = gszLastSyntaxError[0] = gszLastMQ2DataError[0] = 0;
 	}
 	if (zOutput) {
-		char *p = szTemp;
+		char* p = szTemp;
 		while (*p) *zOutput++ = *p++;
 		*zOutput = 0;
 	}
 	if (_stricmp(szTemp, "NULL") == 0) return 0;
 	if (_stricmp(szTemp, "FALSE") == 0) return 0;
 	if (_stricmp(szTemp, "TRUE") == 0) return 1;
-	return ((float)atof(szTemp));
+	return GetFloatFromString(szTemp, 0);
 }
 
 char szLastError[3][MAX_STRING];  // Lets be nice and save/restore error messages
@@ -340,29 +338,29 @@ void DoIce()
 		if (iPausedNav || iPausedStick || iPausedPath)
 		{
 			if (VS > drift) {
-				MQ2Globals::ExecuteCmd(iStrafeLeft, 1, 0);
-				MQ2Globals::ExecuteCmd(iStrafeRight, 0, 0);
+				ExecuteCmd(iStrafeLeft, 1, 0);
+				ExecuteCmd(iStrafeRight, 0, 0);
 			}
 			else if (VS < -drift) {
-				MQ2Globals::ExecuteCmd(iStrafeLeft, 0, 0);
-				MQ2Globals::ExecuteCmd(iStrafeRight, 1, 0);
+				ExecuteCmd(iStrafeLeft, 0, 0);
+				ExecuteCmd(iStrafeRight, 1, 0);
 			}
 			else {
-				MQ2Globals::ExecuteCmd(iStrafeLeft, 0, 0);
-				MQ2Globals::ExecuteCmd(iStrafeRight, 0, 0);
+				ExecuteCmd(iStrafeLeft, 0, 0);
+				ExecuteCmd(iStrafeRight, 0, 0);
 			}
 
 			if (VF > drift) {
-				MQ2Globals::ExecuteCmd(iForward, 0, 0);
-				MQ2Globals::ExecuteCmd(iBackward, 1, 0);
+				ExecuteCmd(iForward, 0, 0);
+				ExecuteCmd(iBackward, 1, 0);
 			}
 			else if (VF < -drift) {
-				MQ2Globals::ExecuteCmd(iForward, 1, 0);
-				MQ2Globals::ExecuteCmd(iBackward, 0, 0);
+				ExecuteCmd(iForward, 1, 0);
+				ExecuteCmd(iBackward, 0, 0);
 			}
 			else {
-				MQ2Globals::ExecuteCmd(iForward, 0, 0);
-				MQ2Globals::ExecuteCmd(iBackward, 0, 0);
+				ExecuteCmd(iForward, 0, 0);
+				ExecuteCmd(iBackward, 0, 0);
 			}
 		}
 	}
@@ -370,10 +368,10 @@ void DoIce()
 	// Turn stuff back on if we're outside ice or have stop drifting
 	if (fabs(VS) < drift) {
 		if (iPausedNav || iPausedStick || iPausedPath) {
-			MQ2Globals::ExecuteCmd(iStrafeLeft, 0, 0);
-			MQ2Globals::ExecuteCmd(iStrafeRight, 0, 0);
-			MQ2Globals::ExecuteCmd(iForward, 0, 0);
-			MQ2Globals::ExecuteCmd(iBackward, 0, 0);
+			ExecuteCmd(iStrafeLeft, 0, 0);
+			ExecuteCmd(iStrafeRight, 0, 0);
+			ExecuteCmd(iForward, 0, 0);
+			ExecuteCmd(iBackward, 0, 0);
 		}
 		if (PluginNAV && iPausedNav) {
 			iPausedNav = 0;
