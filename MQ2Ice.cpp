@@ -1,23 +1,23 @@
-// MQ2Ice.cpp : 
+// MQ2Ice.cpp :
 //
 // Author : Dewey2461
 //
-// Purpose: Moving around on ICE is a PITA. This plugin attempts to make moving around 
-//          a little easier by automatically toggling run/walk and pausing nav/path/stick 
-//          when it detects the player skidding on ice. 
+// Purpose: Moving around on ICE is a PITA. This plugin attempts to make moving around
+//          a little easier by automatically toggling run/walk and pausing nav/path/stick
+//          when it detects the player skidding on ice.
 //
 // Commands: /ice [on|off] - Turns plugin on or off
 // Commands: /ice [nav|path|stick|walk|buff]  [true|false] - turns individual movement parts on or off
 //
 // Users can now define the zone and bounding box for when to toggle walking on. May make more friendly later
-// See "Area" in MQ2Ice.ini , format => [ZoneID] [Min X] [Min Y] [Min Z]  [Max X] [Max Y] [Max Z] 
+// See "Area" in MQ2Ice.ini , format => [ZoneID] [Min X] [Min Y] [Min Z]  [Max X] [Max Y] [Max Z]
 //
-// NOTICE : Movement controls were taken from MQ2MoveUtils 
+// NOTICE : Movement controls were taken from MQ2MoveUtils
 //
 // Released 2020-02-29 - Yes Leap Day!
 //          2020-03-05 - Added save/restore of global error messages
-//          2020-03-08 - Added buff option to toggle blocking bard selos. 
-//          2020-03-09 - Added user defined area. 
+//          2020-03-08 - Added buff option to toggle blocking bard selos.
+//          2020-03-09 - Added user defined area.
 
 #include "../MQ2Plugin.h"
 
@@ -26,35 +26,35 @@ PreSetup("MQ2Ice");
 
 #define TIME unsigned long long
 
-// *************************************************************************** 
-//	Global Variables 
-// *************************************************************************** 
+// ***************************************************************************
+// Global Variables
+// ***************************************************************************
 
 TIME tick = 0;
 
-int PluginON = 1;			// Should we do anything?
-int PluginWALK = 1;			// Should we toggle run/walk?
-int PluginNAV = 1;			// Should we toggle nav ?
-int PluginPATH = 1;			// Should we toggle AdvPath ?
-int PluginSTICK = 1;		// Should we toggle Stick ?
-int PluginBUFF = 1;			// Should we movement buffs? 
-int PluginINI = 0;			// Have we read the INI?
+int PluginON = 1;           // Should we do anything?
+int PluginWALK = 1;         // Should we toggle run/walk?
+int PluginNAV = 1;          // Should we toggle nav ?
+int PluginPATH = 1;         // Should we toggle AdvPath ?
+int PluginSTICK = 1;        // Should we toggle Stick ?
+int PluginBUFF = 1;         // Should we movement buffs?
+int PluginINI = 0;          // Have we read the INI?
 
-int iPausedNav = 0;			// Flag for when I have toggled Nav
-int iPausedStick = 0;		// or stick
-int iPausedPath = 0;		// or AdvPath
-int iPausedRun = 0;			// or Run
-int iPausedBuff = 0;		// or blocking spells
+int iPausedNav = 0;         // Flag for when I have toggled Nav
+int iPausedStick = 0;       // or stick
+int iPausedPath = 0;        // or AdvPath
+int iPausedRun = 0;         // or Run
+int iPausedBuff = 0;        // or blocking spells
 
-int iStrafeLeft = 0;		// Keymapping for ...
+int iStrafeLeft = 0;        // Keymapping for ...
 int iStrafeRight = 0;
 int iForward = 0;
 int iBackward = 0;
 int iRunWalk = 0;
 
-// *************************************************************************** 
-//	Lets make the 'walk' zones configurable 
-// *************************************************************************** 
+// ***************************************************************************
+// Lets make the 'walk' zones configurable
+// ***************************************************************************
 
 typedef struct {
 	WORD ZoneID;
@@ -64,7 +64,7 @@ typedef struct {
 
 AREANODE* pAreaList = NULL;
 
-void ClearAreaList(void)
+void ClearAreaList()
 {
 	AREANODE* p;
 	while (pAreaList)
@@ -75,7 +75,7 @@ void ClearAreaList(void)
 	}
 }
 
-void LoadAreaList(void)
+void LoadAreaList()
 {
 	char szKey[MAX_STRING];
 	char szVal[MAX_STRING];
@@ -103,9 +103,9 @@ void LoadAreaList(void)
 
 
 
-// *************************************************************************** 
-//	To Evaluate or Not to Evaluate that is the question... I choose to EVAL for easy development
-// *************************************************************************** 
+// ***************************************************************************
+// To Evaluate or Not to Evaluate that is the question... I choose to EVAL for easy development
+// ***************************************************************************
 
 float Evaluate(char *zOutput, char *zFormat, ...) {
 	va_list vaList;
@@ -116,9 +116,9 @@ float Evaluate(char *zOutput, char *zFormat, ...) {
 	if (gszLastNormalError[0] || gszLastSyntaxError[0] || gszLastMQ2DataError[0]) {
 		char szBuff[MAX_STRING];
 		vsprintf_s(szBuff, MAX_STRING, zFormat, vaList);
-		if (gszLastNormalError[0])	WriteChatf("MQ2Ice Error:[%s] on Evaluate[%s] = [%s]", gszLastNormalError, szBuff, szTemp);
-		if (gszLastSyntaxError[0])	WriteChatf("MQ2Ice Error:[%s] on Evaluate[%s] = [%s]", gszLastSyntaxError, szBuff, szTemp);
-		if (gszLastMQ2DataError[0])	WriteChatf("MQ2Ice Error:[%s] on Evaluate[%s] = [%s]", gszLastMQ2DataError, szBuff, szTemp);
+		if (gszLastNormalError[0]) WriteChatf("MQ2Ice Error:[%s] on Evaluate[%s] = [%s]", gszLastNormalError, szBuff, szTemp);
+		if (gszLastSyntaxError[0]) WriteChatf("MQ2Ice Error:[%s] on Evaluate[%s] = [%s]", gszLastSyntaxError, szBuff, szTemp);
+		if (gszLastMQ2DataError[0]) WriteChatf("MQ2Ice Error:[%s] on Evaluate[%s] = [%s]", gszLastMQ2DataError, szBuff, szTemp);
 		gszLastNormalError[0] = gszLastSyntaxError[0] = gszLastMQ2DataError[0] = 0;
 	}
 	if (zOutput) {
@@ -132,16 +132,16 @@ float Evaluate(char *zOutput, char *zFormat, ...) {
 	return ((float)atof(szTemp));
 }
 
-char szLastError[3][MAX_STRING];		// Lets be nice and save/restore error messages
+char szLastError[3][MAX_STRING];  // Lets be nice and save/restore error messages
 
-void SaveErrorMessages(void)
+void SaveErrorMessages()
 {
 	strcpy_s(szLastError[0], gszLastNormalError);
 	strcpy_s(szLastError[1], gszLastSyntaxError);
 	strcpy_s(szLastError[2], gszLastMQ2DataError);
 }
 
-void RestoreErrorMessages(void)
+void RestoreErrorMessages()
 {
 	strcpy_s(gszLastNormalError, szLastError[0]);
 	strcpy_s(gszLastSyntaxError, szLastError[1]);
@@ -150,9 +150,9 @@ void RestoreErrorMessages(void)
 
 
 
-// *************************************************************************** 
-//	Get the movement keys. This code/method is from MQ2MoveUtils
-// *************************************************************************** 
+// ***************************************************************************
+// Get the movement keys. This code/method is from MQ2MoveUtils
+// ***************************************************************************
 
 void FindMappedKeys()
 {
@@ -164,9 +164,9 @@ void FindMappedKeys()
 }
 
 
-// *************************************************************************** 
-//	Functions to read/write values so we're presistant
-// *************************************************************************** 
+// ***************************************************************************
+// Functions to read/write values so we're presistant
+// ***************************************************************************
 
 void WriteKeyVal(char *FileName, char *Section, char *Key, char *zFormat, ...) {
 	va_list vaList;
@@ -177,7 +177,7 @@ void WriteKeyVal(char *FileName, char *Section, char *Key, char *zFormat, ...) {
 }
 
 
-void WriteINI(void)
+void WriteINI()
 {
 	WriteKeyVal(INIFileName, "Settings", "ON", "%d", PluginON);
 	WriteKeyVal(INIFileName, "Settings", "Walk", "%d", PluginWALK);
@@ -187,7 +187,7 @@ void WriteINI(void)
 }
 
 
-void ReadINI(void)
+void ReadINI()
 {
 	PluginINI = 1;
 	WriteChatf("ReadINI");
@@ -205,9 +205,9 @@ void ReadINI(void)
 }
 
 
-// *************************************************************************** 
-//	Functions to turn things on and off so we're 'friendly' ... ug ... 
-// *************************************************************************** 
+// ***************************************************************************
+// Functions to turn things on and off so we're 'friendly' ... ug ...
+// ***************************************************************************
 
 void MyCommand(PSPAWNINFO pCHAR, PCHAR szLine)
 {
@@ -249,11 +249,11 @@ void MyCommand(PSPAWNINFO pCHAR, PCHAR szLine)
 	WriteINI();
 }
 
-// *************************************************************************** 
-//	Functions to determine if we're in a 'walk' only area 
-// *************************************************************************** 
+// ***************************************************************************
+// Functions to determine if we're in a 'walk' only area
+// ***************************************************************************
 
-int EvalAreaList(void)
+int EvalAreaList()
 {
 	PCHARINFO pChar = GetCharInfo();
 	PSPAWNINFO pSpawn = (PSPAWNINFO)pCharSpawn;
@@ -270,14 +270,14 @@ int EvalAreaList(void)
 }
 
 
-// *************************************************************************** 
-//	
+// ***************************************************************************
+//
 //  Main Method - Every 100ms check:
-//   1 - Are we on first floor near ice ? if so toggle run/walk 
+//   1 - Are we on first floor near ice ? if so toggle run/walk
 //   2 - Are we skidding ? If so toggle nav/path/stick and actively control skid
 //   3 - if we have recovered or no longer near ice turn run or unpause move
 //
-// *************************************************************************** 
+// ***************************************************************************
 
 
 void DoIce()
@@ -367,7 +367,7 @@ void DoIce()
 		}
 	}
 
-	// Turn stuff back on if we're outside ice or have stop drifting 
+	// Turn stuff back on if we're outside ice or have stop drifting
 	if (fabs(VS) < drift) {
 		if (iPausedNav || iPausedStick || iPausedPath) {
 			MQ2Globals::ExecuteCmd(iStrafeLeft, 0, 0);
@@ -401,20 +401,20 @@ void DoIce()
 }
 
 
-PLUGIN_API VOID InitializePlugin(VOID)
+PLUGIN_API void InitializePlugin()
 {
 	FindMappedKeys();
 	AddCommand("/ice", MyCommand);
 }
 
 
-PLUGIN_API VOID ShutdownPlugin(VOID)
+PLUGIN_API void ShutdownPlugin()
 {
 	RemoveCommand("/ice");
 }
 
 
-PLUGIN_API VOID OnPulse(VOID)
+PLUGIN_API void OnPulse()
 {
 	if (!PluginON) return;
 	if (gGameState != GAMESTATE_INGAME) {
