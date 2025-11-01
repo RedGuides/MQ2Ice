@@ -105,7 +105,7 @@ void LoadAreaList()
 // To Evaluate or Not to Evaluate that is the question... I choose to EVAL for easy development
 // ***************************************************************************
 
-float Evaluate(char* zOutput, char* zFormat, ...) {
+float Evaluate(char* zOutput, const char* zFormat, ...) {
 	va_list vaList;
 	va_start(vaList, zFormat);
 	char szTemp[MAX_STRING];
@@ -166,7 +166,7 @@ void FindMappedKeys()
 // Functions to read/write values so we're presistant
 // ***************************************************************************
 
-void WriteKeyVal(char *FileName, char *Section, char *Key, char *zFormat, ...) {
+void WriteKeyVal(const char *FileName, const char *Section, const char *Key, const char *zFormat, ...) {
 	va_list vaList;
 	va_start(vaList, zFormat);
 	char szTemp[MAX_STRING];
